@@ -1,0 +1,7 @@
+seleniumbase
+beautifulsoup4
+pymongo
+requests
+python-dotenv
+pytz
+APScheduler
