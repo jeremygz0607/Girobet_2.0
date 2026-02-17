@@ -133,7 +133,7 @@ chmod 600 /opt/aviator-signal/.env
 
 ## 6. Run with systemd (recommended)
 
-So the scraper and log monitor keep running and restart on reboot.
+So the scraper keeps running and restarts on reboot. One service runs everything (scrape, MongoDB, signal engine, scheduler).
 
 Create a user to run the app (optional but good practice):
 
@@ -143,17 +143,17 @@ adduser --disabled-password --gecos "" aviator
 chown -R aviator:aviator /opt/aviator-signal
 ```
 
-**Service 1 – Aviator scraper**
+**Service – Aviator (scraper + MongoDB + signal engine + scheduler)**
 
 ```bash
-nano /etc/systemd/system/aviator-scraper.service
+nano /etc/systemd/system/aviator.service
 ```
 
 Paste (adjust paths if you used a different directory):
 
 ```ini
 [Unit]
-Description=Aviator payout scraper
+Description=Aviator payout scraper and signal engine
 After=network.target
 
 [Service]
@@ -163,33 +163,6 @@ Group=aviator
 WorkingDirectory=/opt/aviator-signal
 Environment=PATH=/opt/aviator-signal/venv/bin
 ExecStart=/opt/aviator-signal/venv/bin/python aviator.py
-Restart=always
-RestartSec=10
-StandardOutput=append:/opt/aviator-signal/log.log
-StandardError=append:/opt/aviator-signal/log.log
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**Service 2 – Log monitor (MongoDB + signal engine + scheduler)**
-
-```bash
-nano /etc/systemd/system/aviator-log-monitor.service
-```
-
-```ini
-[Unit]
-Description=Aviator log monitor and signal engine
-After=network.target
-
-[Service]
-Type=simple
-User=aviator
-Group=aviator
-WorkingDirectory=/opt/aviator-signal
-Environment=PATH=/opt/aviator-signal/venv/bin
-ExecStart=/opt/aviator-signal/venv/bin/python log_monitor.py
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -228,45 +201,20 @@ Enable and start:
 
 ```bash
 systemctl daemon-reload
-systemctl enable aviator-scraper aviator-log-monitor
-systemctl start aviator-scraper aviator-log-monitor
-
-# Optional
-# systemctl enable aviator-watchdog && systemctl start aviator-watchdog
+systemctl enable aviator
+systemctl start aviator
 ```
 
 Check status:
 
 ```bash
-systemctl status aviator-scraper aviator-log-monitor
-journalctl -u aviator-log-monitor -f
-tail -f /opt/aviator-signal/log.log
+systemctl status aviator
+journalctl -u aviator -f
 ```
 
 ---
 
-## 7. Log rotation (optional)
-
-To avoid `log.log` growing forever:
-
-```bash
-nano /etc/logrotate.d/aviator
-```
-
-```text
-/opt/aviator-signal/log.log {
-    daily
-    rotate 7
-    compress
-    missingok
-    notifempty
-    copytruncate
-}
-```
-
----
-
-## 8. Firewall (optional)
+## 7. Firewall (optional)
 
 If you don’t need inbound HTTP/SSH from elsewhere, you can leave UFW off or allow only SSH:
 
@@ -283,12 +231,10 @@ Outbound: MongoDB (Atlas), Telegram, and the casino URLs must be reachable (defa
 
 | Task              | Command |
 |-------------------|--------|
-| Start scraper     | `systemctl start aviator-scraper` |
-| Start log monitor | `systemctl start aviator-log-monitor` |
-| Stop all          | `systemctl stop aviator-scraper aviator-log-monitor` |
-| View scraper log  | `tail -f /opt/aviator-signal/log.log` |
-| View monitor log  | `journalctl -u aviator-log-monitor -f` |
-| Restart after code change | `systemctl restart aviator-scraper aviator-log-monitor` |
+| Start aviator     | `systemctl start aviator` |
+| Stop aviator      | `systemctl stop aviator` |
+| View logs         | `journalctl -u aviator -f` |
+| Restart after code change | `systemctl restart aviator` |
 
 ---
 

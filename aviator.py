@@ -9,15 +9,14 @@ import logging
 import os
 
 import config
+import log_monitor
+import scheduler
 
-# Configure logging
+# Configure logging (console only - no log.log file)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(config.LOG_FILE, encoding='utf-8'),
-        logging.StreamHandler()
-    ]
+    handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
 
@@ -73,6 +72,7 @@ def run_payout_script():
             logger.info(f"Navigating to {config.GAME_URL}")
             driver.get(config.GAME_URL)
 
+            previous_payout_list = None
             while True:
                 try:
                     WebDriverWait(driver, 10).until(
@@ -94,6 +94,9 @@ def run_payout_script():
                         payout_amount_list = [p.text.strip() for p in payouts]
                         logger.info(
                             f"Found {len(payouts)} payouts | {payout_amount_list}"
+                        )
+                        previous_payout_list = log_monitor.process_payout_list(
+                            payout_amount_list, previous_payout_list
                         )
                     else:
                         logger.warning(config.LOG_NO_PAYOUTS_MSG)
@@ -127,11 +130,21 @@ if not config.AVIATOR_USERNAME or not config.AVIATOR_PASSWORD:
     logger.error("Set AVIATOR_USERNAME and AVIATOR_PASSWORD environment variables. Exiting.")
     raise SystemExit(1)
 
-logger.info(f"Script started. Log file: {config.LOG_FILE}")
+if not config.MONGODB_URI:
+    logger.error("Set MONGODB_URI environment variable. Exiting.")
+    raise SystemExit(1)
+
+if not log_monitor.init_mongodb():
+    logger.error("MongoDB initialization failed. Exiting.")
+    raise SystemExit(1)
+
+logger.info("Script started (direct DB mode - no log file)")
 
 try:
     run_payout_script()
 finally:
+    scheduler.shutdown()
+    log_monitor.close_mongodb()
     try:
         if os.path.isfile(config.PID_FILE):
             os.remove(config.PID_FILE)

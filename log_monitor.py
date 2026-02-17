@@ -61,6 +61,18 @@ def init_mongodb():
         return False
 
 
+def close_mongodb():
+    """Close MongoDB connection. Call on aviator shutdown."""
+    global mongo_client
+    if mongo_client:
+        try:
+            mongo_client.close()
+            logger.info("MongoDB connection closed")
+        except Exception:
+            pass
+        mongo_client = None
+
+
 def convert_multiplier_to_decimal(multiplier_str):
     """Convert multiplier string (e.g., '2.50x') to Decimal"""
     try:
@@ -146,6 +158,57 @@ def parse_payout_from_log(line):
     return None
 
 
+def process_payout_list(payout_list, previous_payout_list):
+    """
+    Process payout list directly (no log file). Diffs against previous list,
+    saves new payouts to MongoDB, triggers signal engine.
+    Returns updated previous_payout_list.
+    Used when aviator.py processes payouts in-process without writing to log.
+    """
+    if not payout_list:
+        return previous_payout_list
+
+    if previous_payout_list is not None:
+        new_values = []
+        if payout_list and previous_payout_list:
+            previous_first = previous_payout_list[0]
+            try:
+                match_index = payout_list.index(previous_first)
+                if match_index > 0:
+                    new_values = payout_list[:match_index]
+                elif payout_list[0] != previous_first:
+                    new_values = [payout_list[0]]
+            except ValueError:
+                if payout_list[0] != previous_payout_list[0]:
+                    new_values = [payout_list[0]]
+
+        if new_values:
+            if len(new_values) == 1:
+                new_value = new_values[0]
+                round_timestamp = datetime.now(timezone.utc)
+                logger.info(f"🆕 NEW PAYOUT DETECTED | New Value: {new_value}")
+                round_doc = save_round_to_db(new_value, round_timestamp)
+                if round_doc:
+                    signal_engine.on_new_round(round_doc)
+                previous_payout_list = payout_list.copy()
+            else:
+                logger.info(f"🆕 {len(new_values)} NEW PAYOUTS DETECTED | New Values: {new_values}")
+                for multiplier_str in reversed(new_values):
+                    round_timestamp = datetime.now(timezone.utc)
+                    logger.info(f"   Saving payout: {multiplier_str}")
+                    round_doc = save_round_to_db(multiplier_str, round_timestamp)
+                    if round_doc:
+                        signal_engine.on_new_round(round_doc)
+                    time.sleep(0.1)
+                previous_payout_list = payout_list.copy()
+                logger.info(f"✅ All {len(new_values)} new payouts saved to database")
+    else:
+        logger.info(f"Initial payout list loaded: {len(payout_list)} payouts")
+        previous_payout_list = payout_list.copy()
+
+    return previous_payout_list
+
+
 def _process_lines(new_lines, previous_payout_list):
     """Process new log lines and return updated previous_payout_list."""
     for line in new_lines:
@@ -154,45 +217,7 @@ def _process_lines(new_lines, previous_payout_list):
         payout_list = parse_payout_from_log(line)
         if not payout_list:
             continue
-
-        if previous_payout_list is not None:
-            new_values = []
-            if payout_list and previous_payout_list:
-                previous_first = previous_payout_list[0]
-                try:
-                    match_index = payout_list.index(previous_first)
-                    if match_index > 0:
-                        new_values = payout_list[:match_index]
-                    elif payout_list[0] != previous_first:
-                        new_values = [payout_list[0]]
-                except ValueError:
-                    if payout_list[0] != previous_payout_list[0]:
-                        new_values = [payout_list[0]]
-
-            if new_values:
-                if len(new_values) == 1:
-                    new_value = new_values[0]
-                    round_timestamp = datetime.now(timezone.utc)
-                    logger.info(f"🆕 NEW PAYOUT DETECTED from log | New Value: {new_value}")
-                    round_doc = save_round_to_db(new_value, round_timestamp)
-                    if round_doc:
-                        signal_engine.on_new_round(round_doc)
-                    previous_payout_list = payout_list.copy()
-                else:
-                    logger.info(f"🆕 {len(new_values)} NEW PAYOUTS DETECTED from log | New Values: {new_values}")
-                    for multiplier_str in reversed(new_values):
-                        round_timestamp = datetime.now(timezone.utc)
-                        logger.info(f"   Saving payout: {multiplier_str}")
-                        round_doc = save_round_to_db(multiplier_str, round_timestamp)
-                        if round_doc:
-                            signal_engine.on_new_round(round_doc)
-                        time.sleep(0.1)
-                    previous_payout_list = payout_list.copy()
-                    logger.info(f"✅ All {len(new_values)} new payouts saved to database")
-        else:
-            logger.info(f"Initial payout list loaded from log: {len(payout_list)} payouts")
-            previous_payout_list = payout_list.copy()
-
+        previous_payout_list = process_payout_list(payout_list, previous_payout_list)
     return previous_payout_list
 
 

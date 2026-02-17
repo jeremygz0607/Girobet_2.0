@@ -4,8 +4,8 @@ Scrapes payout/multiplier data from the Aviator casino game, saves rounds to Mon
 
 ## Components
 
-- **aviator.py** – Headless browser logs in, opens the game, and scrapes payout multipliers; logs to `log.log` and writes PID to `aviator.pid`.
-- **log_monitor.py** – Tails `log.log`, detects new payouts, inserts them into MongoDB (`casino.rounds`), and triggers the signal engine for each new round.
+- **aviator.py** – Headless browser logs in, opens the game, scrapes payout multipliers, saves directly to MongoDB, and triggers the signal engine. No log file used. Single script does everything.
+- **log_monitor.py** – Optional: tails `log.log` if you run an older setup. For direct mode, aviator.py uses `process_payout_list()` in-process; log_monitor's file-tail mode is deprecated.
 - **signal_engine.py** – Pattern detection (6 rounds < 2x), signal creation, gale escalation (up to 2 gales), win/loss tracking, and Telegram notifications.
 - **telegram_service.py** – All Telegram message templates (Portuguese/Brazil) with emojis: signal alerts, win/loss/gale messages, daily/hourly recaps.
 - **scheduler.py** – Scheduled messages in BRT timezone: daily opener (08:00), mid-day recap (14:00), hourly scoreboard, end of day recap (22:30), daily close (23:00), weekly recap (Sunday 21:00).
@@ -20,33 +20,22 @@ Copy `.env.example` to `.env` (or set variables in your shell). **Do not commit 
 | `AVIATOR_PASSWORD` | aviator.py | Yes | Casino login password |
 | `AVIATOR_GAME_URL` | aviator.py | No | Game URL (default in config) |
 | `AVIATOR_LOGIN_URL` | aviator.py | No | Login URL (default in config) |
-| `MONGODB_URI` | log_monitor.py | Yes (for DB) | MongoDB connection string |
-| `MONGODB_DATABASE` | log_monitor.py | No | Database name (default: `casino`) |
-| `MONGODB_COLLECTION` | log_monitor.py | No | Collection name (default: `rounds`) |
+| `MONGODB_URI` | aviator.py | Yes (for DB) | MongoDB connection string |
+| `MONGODB_DATABASE` | aviator.py | No | Database name (default: `casino`) |
+| `MONGODB_COLLECTION` | aviator.py | No | Collection name (default: `rounds`) |
 | `TELEGRAM_BOT_TOKEN` | telegram_service.py | Yes (for Telegram) | Bot token from @BotFather |
 | `TELEGRAM_CHANNEL_ID` | telegram_service.py | Yes (for Telegram) | Channel ID (e.g., `@aviator_maquina` or numeric) |
 | `AFFILIATE_LINK` | telegram_service.py | No | Affiliate link for "JOGAR AGORA" buttons |
 
 ## Usage
 
-Run all scripts from the project root so `log.log` and `aviator.pid` are in the right place.
+Run from the project root. Only one script is needed:
 
-1. **Scraper (required)**  
-   ```bash
-   python aviator.py
-   ```
+```bash
+python aviator.py
+```
 
-2. **Log monitor (required – saves payouts to MongoDB + runs signal engine)**  
-   ```bash
-   python log_monitor.py
-   ```
-   This also initializes Telegram and the scheduler for automated messages.
-
-3. **Watchdog (optional – auto-restart scraper on repeated "No payouts")**  
-   ```bash
-   python run_aviator_watchdog.py
-   ```
-   Start `aviator.py` first, then run the watchdog.
+This script scrapes payouts, saves them directly to MongoDB, runs the signal engine, and sends Telegram notifications. No `log.log` file is created. MongoDB, Telegram, and the scheduler are initialized automatically.
 
 ## Dependencies
 
