@@ -197,18 +197,13 @@ Próximo sinal em breve 👀
 # ============================================================
 def send_loss_message_telegram(result, today_wins, today_losses):
     """Send loss message (gale 2 failed)."""
-    text = f"""❌ PERDEMOS ESSA - Caiu em {result}x
+    text = f"""🔴 STOP LOSS ATIVADO 🔴
 
-Faz parte, time. Nenhum sistema vence 100%.
+Volatilidade detectada no mercado.
 
-👉 O QUE FAZER AGORA:
-- NÃO tente recuperar sozinho
-- Aguarde o próximo sinal
-- Mantém a disciplina 💪
+Pausando para proteger sua banca. 🛡️
 
-Bot recalibrando... próximo sinal em breve.
-
-Hoje: {today_wins} ✅ | {today_losses} ❌
+Aguardando entrada segura...
 
 {_link_button()}"""
     send_message(text)
