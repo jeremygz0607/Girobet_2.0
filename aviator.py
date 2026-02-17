@@ -102,7 +102,7 @@ def run_payout_script():
                         logger.warning(config.LOG_NO_PAYOUTS_MSG)
 
                     driver.switch_to.default_content()
-                    time.sleep(5)
+                    time.sleep(0.5)
 
                 except (InvalidSessionIdException, WebDriverException) as we:
                     logger.error(
