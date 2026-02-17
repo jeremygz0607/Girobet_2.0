@@ -63,7 +63,7 @@ def send_daily_opener(yesterday_wins, yesterday_losses):
     pct = (yesterday_wins / total * 100) if total > 0 else 0
     text = f"""🟢 BOM DIA TIME! ESTAMOS ONLINE
 
-📊 Ontem fechamos: {yesterday_wins} ✅ | {yesterday_losses} ❌ ({pct:.0f}%)
+📊 Ontem fechamos: {yesterday_wins} ✅ | {yesterday_losses} 🛑 ({pct:.0f}%)
 
 Sinais começando agora! 
 
@@ -124,7 +124,7 @@ Meta era {target}x - BATEU ✅
 
 Quem apostou R$5 lucrou R${profit_example}
 
-Hoje: {today_wins} ✅ | {today_losses} ❌
+Hoje: {today_wins} ✅ | {today_losses} 🛑
 
 Próximo sinal em breve 👀
 
@@ -184,7 +184,7 @@ Meta era {target}x - BATEU ✅
 É pra isso que o sistema GALE existe! 
 Quem confiou e dobrou tá lucrando agora 🤑
 
-Hoje: {today_wins} ✅ | {today_losses} ❌
+Hoje: {today_wins} ✅ | {today_losses} 🛑
 
 Próximo sinal em breve 👀
 
@@ -197,7 +197,7 @@ Próximo sinal em breve 👀
 # ============================================================
 def send_loss_message_telegram(result, today_wins, today_losses):
     """Send loss message (gale 2 failed)."""
-    text = f"""🔴 STOP LOSS ATIVADO 🔴
+    text = f"""🛑 STOP LOSS ATIVADO 🛑
 
 Volatilidade detectada no mercado.
 
@@ -220,7 +220,7 @@ def send_hourly_scoreboard(result_emojis, period_wins, period_losses):
 
 {result_emojis}
 
-{period_wins} vitórias | {period_losses} derrotas ({pct:.0f}%)
+{period_wins} vitórias | {period_losses} stop loss ({pct:.0f}%)
 
 👉 Ainda não tá jogando? 
 Olha o que você tá perdendo! ☝️
@@ -240,7 +240,7 @@ def send_daily_close(today_wins, today_losses):
 
 📊 Resultado final de hoje:
 ✅ Vitórias: {today_wins}
-❌ Derrotas: {today_losses}
+🛑 Stop Loss: {today_losses}
 📈 Taxa de acerto: {pct:.0f}%
 
 Valeu por jogar com a gente, time! 🙏
@@ -266,7 +266,7 @@ def send_midday_recap(result_emojis, wins, losses, best_streak):
 {result_emojis}
 
 ✅ Vitórias: {wins}
-❌ Derrotas: {losses}
+🛑 Stop Loss: {losses}
 📈 Taxa: {win_rate:.0f}%
 
 🔥 Maior sequência: {best_streak} seguidas
@@ -301,7 +301,7 @@ def send_end_of_day_recap(result_emojis, wins, losses, best_streak, total_signal
 ━━━━━━━━━━━━━━━━━━━━
 
 ✅ Vitórias: {wins}
-❌ Derrotas: {losses}
+🛑 Stop Loss: {losses}
 📈 Taxa de acerto: {win_rate:.0f}%
 
 🔥 Maior sequência: {best_streak} seguidas
@@ -334,7 +334,7 @@ def send_weekly_recap(daily_data, week_wins, week_losses, week_total_signals, be
         wins = day_data['wins']
         losses = day_data['losses']
         rate = day_data['rate']
-        daily_lines.append(f"{day_name}:  {wins}✅ {losses}❌ ({rate:.0f}%)")
+        daily_lines.append(f"{day_name}:  {wins}✅ {losses}🛑 ({rate:.0f}%)")
 
     daily_str = "\n".join(daily_lines)
 
@@ -348,7 +348,7 @@ def send_weekly_recap(daily_data, week_wins, week_losses, week_total_signals, be
 
 📈 TOTAL DA SEMANA:
 ✅ {week_wins} vitórias
-❌ {week_losses} derrotas
+🛑 {week_losses} stop loss
 🎯 {week_rate:.0f}% de acerto
 
 🔥 Melhor dia: {best_day} ({best_day_rate:.0f}%)
