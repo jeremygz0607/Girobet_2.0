@@ -462,11 +462,11 @@ Quem está seguindo está lucrando! Não perca o próximo sinal! 💰
 
 {_link_button()}"""
     else:  # 15, 20, 25, 30...
-        text = f"""🚨🚨🚨 SEQUÊNCIA DE {streak} GREENS! 🚨🚨🚨
+        text = f"""🔥🔥🔥 SEQUÊNCIA DE {streak} GREENS! 🔥🔥🔥
 
-INCRÍVEL! O algoritmo não para! Histórico! 🚀💎
+O ALGORITMO ESTÁ ON FIRE! 🚀
 
-Quem está seguindo está lucrando! Print e manda pros amigos! 💰
+Quem está seguindo, está lucrando! 💎💰
 
 {_link_button()}"""
     send_message(text)
