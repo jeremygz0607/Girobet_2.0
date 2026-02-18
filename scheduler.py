@@ -3,6 +3,7 @@ Scheduler: scheduled Telegram messages (daily opener, hourly scoreboard, recaps,
 All times in BRT (America/Sao_Paulo timezone).
 """
 import logging
+import random
 from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -51,14 +52,14 @@ def init(db):
         name="Mid-Day Recap (14:00 BRT)",
     )
 
-    # Hourly Scoreboard: 10:00, 12:00, 16:00, 18:00, 20:00 BRT
-    for hour in [10, 12, 16, 18, 20]:
-        _scheduler.add_job(
-            _job_hourly_scoreboard,
-            CronTrigger(hour=hour, minute=0, timezone=BRT),
-            id=f"hourly_scoreboard_{hour}",
-            name=f"Hourly Scoreboard ({hour}:00 BRT)",
-        )
+    # Session Summary: every 45-60 min (replaces Hourly Scoreboard)
+    _session_summary_minutes = random.randint(45, 60)
+    _scheduler.add_job(
+        _job_session_summary,
+        IntervalTrigger(minutes=_session_summary_minutes, timezone=BRT),
+        id="session_summary",
+        name=f"Session Summary (every {_session_summary_minutes} min)",
+    )
 
     # End of Day Recap: 22:30 BRT
     _scheduler.add_job(
@@ -102,6 +103,17 @@ def init(db):
 
     _scheduler.start()
     logger.info("Scheduler started with BRT timezone")
+
+
+def post_shutdown_summary():
+    """
+    Post a session summary when scraper shuts down or goes offline.
+    Call before scheduler.shutdown() so DB is still available.
+    """
+    try:
+        _job_session_summary()
+    except Exception as e:
+        logger.debug(f"post_shutdown_summary error: {e}")
 
 
 def shutdown():
@@ -233,37 +245,70 @@ def _job_midday_recap():
 
 
 # ============================================================
-# Job: Hourly Scoreboard (10:00, 12:00, 16:00, 18:00, 20:00 BRT)
+# Job: Session Summary (every 45-60 min)
 # ============================================================
-def _job_hourly_scoreboard():
-    """Send hourly scoreboard: signals from last 2 hours."""
-    now = datetime.now(BRT)
-    two_hours_ago = now - timedelta(hours=2)
-
+def _job_session_summary():
+    """Send session summary: signals since last summary (or since 08:00). Every 45-60 min."""
     if _db is None:
         return
+    now = datetime.now(BRT)
+    engine_coll = _db[config.ENGINE_STATE_COLLECTION]
+    try:
+        state = engine_coll.find_one({"_id": "state"}) or {}
+    except Exception as e:
+        logger.debug(f"_job_session_summary state error: {e}")
+        state = {}
+    last_at = state.get("last_session_summary_at")
+    today_8am = BRT.localize(datetime(_today_brt().year, _today_brt().month, _today_brt().day, 8, 0))
+    if last_at is None:
+        if now < today_8am:
+            return  # Before 08:00, skip
+        session_start = today_8am
+    else:
+        if hasattr(last_at, "tzinfo") and last_at.tzinfo is None:
+            last_at = last_at.replace(tzinfo=pytz.utc)
+        last_brt = last_at.astimezone(BRT)
+        # New day: use 08:00 BRT today as session start
+        if last_brt.date() < _today_brt():
+            session_start = today_8am
+        else:
+            session_start = last_brt
+    session_start_utc = session_start.astimezone(pytz.utc)
     try:
         coll = _db[config.SIGNALS_COLLECTION]
         cursor = coll.find(
             {
                 "status": {"$in": ["won", "lost"]},
-                "created_at": {"$gte": two_hours_ago.astimezone(pytz.utc)},
+                "created_at": {"$gte": session_start_utc},
             }
         ).sort("created_at", 1)
         signals = list(cursor)
     except Exception as e:
-        logger.debug(f"_job_hourly_scoreboard error: {e}")
+        logger.debug(f"_job_session_summary signals error: {e}")
         signals = []
-
-    result_emojis = _build_result_emojis(signals)
     period_wins = sum(1 for s in signals if s.get("status") == "won")
     period_losses = sum(1 for s in signals if s.get("status") == "lost")
-
-    if period_wins + period_losses == 0:
-        logger.info("No signals in last 2 hours, skipping hourly scoreboard")
+    total_signals = len(signals)
+    if total_signals == 0:
+        logger.info("No signals in session period, skipping session summary")
         return
-
-    telegram_service.send_hourly_scoreboard(result_emojis, period_wins, period_losses)
+    delta = now - session_start
+    total_min = int(delta.total_seconds() / 60)
+    if total_min < 60:
+        session_duration = f"{total_min} min"
+    else:
+        h, m = divmod(total_min, 60)
+        session_duration = f"{h}h {m}min"
+    win_rate = (period_wins / total_signals * 100) if total_signals > 0 else 0
+    telegram_service.send_session_summary(session_duration, total_signals, period_wins, period_losses, win_rate)
+    try:
+        engine_coll.update_one(
+            {"_id": "state"},
+            {"$set": {"last_session_summary_at": datetime.now(pytz.utc)}},
+            upsert=True,
+        )
+    except Exception as e:
+        logger.debug(f"_job_session_summary update error: {e}")
 
 
 # ============================================================

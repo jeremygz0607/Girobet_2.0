@@ -256,20 +256,38 @@ Aguardando entrada segura...
 
 
 # ============================================================
-# TEMPLATE 9: Hourly Scoreboard
+# TEMPLATE 9: Session Summary (replaces Hourly Scoreboard)
 # ============================================================
-def send_hourly_scoreboard(result_emojis, period_wins, period_losses):
-    """Send hourly scoreboard (every 2 hours)."""
-    total = period_wins + period_losses
-    pct = (period_wins / total * 100) if total > 0 else 0
-    text = f"""📊 COMO ESTAMOS NAS ÚLTIMAS 2 HORAS:
+def _performance_message_from_win_rate(win_rate):
+    """Dynamic commentary based on win rate. Returns (emoji_prefix, message)."""
+    if win_rate >= 75:
+        return "🔥", "Sessão excelente! Algoritmo em alta performance."
+    if win_rate >= 60:
+        return "✅💎", "Sessão positiva. Consistência é a chave!"
+    if win_rate >= 50:
+        return "📊", "Mercado desafiador. Gestão de banca é essencial."
+    return "⚠️", "Mercado volátil. Recomendamos cautela nas próximas entradas."
 
-{result_emojis}
 
-{period_wins} vitórias | {period_losses} stop loss ({pct:.0f}%)
+def send_session_summary(session_duration, total_signals, wins, losses, win_rate):
+    """Send full session summary with dynamic commentary (V2). Uses Stop Loss for losses."""
+    total = wins + losses
+    win_rate_val = (wins / total * 100) if total > 0 else 0
+    emoji_prefix, perf_msg = _performance_message_from_win_rate(win_rate_val)
+    performance_message = f"{emoji_prefix} {perf_msg}"
+    text = f"""📊 RESUMO DA SESSÃO 📊
 
-👉 Ainda não tá jogando? 
-Olha o que você tá perdendo! ☝️
+━━━━━━━━━━━━━━━━━━━━
+
+⏰ Tempo: {session_duration}
+📈 Sinais enviados: {total_signals}
+✅ Greens: {wins}
+🛑 Stop Loss: {losses}
+📊 Aproveitamento: {win_rate_val:.0f}%
+
+━━━━━━━━━━━━━━━━━━━━
+
+{performance_message}
 
 {_link_button()}"""
     send_message(text)

@@ -147,6 +147,10 @@ logger.info("Script started (direct DB mode - no log file)")
 try:
     run_payout_script()
 finally:
+    try:
+        scheduler.post_shutdown_summary()
+    except Exception as e:
+        logger.warning(f"Could not post shutdown summary: {e}")
     scheduler.shutdown()
     log_monitor.close_mongodb()
     try:
