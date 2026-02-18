@@ -274,7 +274,7 @@ def send_signal(last_round, target):
     """Send signal confirmation message (V2 style)."""
     # In V2 we focus on target/protection/gale max, not last_round text.
     target_multiplier = target
-    protection_multiplier = target  # can be adjusted later if a distinct protection level is introduced
+    protection_multiplier = 2.00  # can be adjusted later if a distinct protection level is introduced
     gale_max = getattr(config, "MAX_GALE", 2)
 
     text = f"""🚀 SINAL CONFIRMADO 🚀
@@ -291,10 +291,26 @@ def send_signal(last_round, target):
 # TEMPLATE 4: Win Result
 # ============================================================
 def send_win_result(result, target, today_wins, today_losses, reply_to_message_id=None):
-    """Send win result message (gale_depth = 0) - V2 style. Rotates emoji + phrase."""
-    emoji = random.choice(WIN_EMOJIS)
-    phrase = random.choice(WIN_PHRASES)
-    text = f"""✅ GREEEEEN! {emoji}
+    """Send win result (gale_depth = 0). Big Win if result >= 3*target, else Standard Win."""
+    try:
+        result_val = float(result)
+        target_val = float(target)
+        is_big_win = result_val >= 3 * target_val
+    except (TypeError, ValueError):
+        is_big_win = False
+    if is_big_win:
+        emoji = random.choice(WIN_EMOJIS)
+        text = f"""✅ 🔥 GREEEEEN GIGANTE! 🔥 ✅
+
+Lucro MASSIVO garantido! {emoji}
+
+Quem seguiu, lucrou! 💎
+
+{_link_button()}"""
+    else:
+        emoji = random.choice(WIN_EMOJIS)
+        phrase = random.choice(WIN_PHRASES)
+        text = f"""✅ GREEEEEN! {emoji}
 
 {phrase}
 

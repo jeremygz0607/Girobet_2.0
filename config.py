@@ -24,7 +24,7 @@ MONGODB_COLLECTION = os.environ.get("MONGODB_COLLECTION", "rounds")
 # Signal Engine
 SEQUENCE_LENGTH = 3
 THRESHOLD = 2.0
-TARGET_CASHOUT = 1.80
+TARGET_CASHOUT = 1.50
 MAX_GALE = 2
 COOLDOWN_ROUNDS = 3
 # MongoDB collection names for signal engine (same database as rounds)
