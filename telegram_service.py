@@ -103,14 +103,13 @@ def send_signal(last_round, target):
     protection_multiplier = target  # can be adjusted later if a distinct protection level is introduced
     gale_max = getattr(config, "MAX_GALE", 2)
 
-    text = f"""NEW:
-🚀 SINAL CONFIRMADO 🚀
+    text = f"""🚀 SINAL CONFIRMADO 🚀
 
-🎯 Alvo: {target_multiplier}x
-🛡️ Proteção: {protection_multiplier}x
-🔁 Gale Máx: {gale_max}
+ 🎯 Alvo: {target_multiplier}x
+ 🛡️ Proteção: {protection_multiplier}x
+ 🔁 Gale Máx: {gale_max}
 
-🎰 APOSTE AGORA!
+ 🎰 APOSTE AGORA!
 
 {_link_button()}"""
     send_message(text)
