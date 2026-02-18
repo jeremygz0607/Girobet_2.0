@@ -2,9 +2,11 @@
 Telegram Service: message templates and sending logic.
 All messages in Portuguese (Brazil) with emojis for engagement.
 Uses Telegram Bot HTTP API directly (no python-telegram-bot dependency).
+V2: Jitter/humanization - random delay, emoji variation, phrase rotation.
 """
 import logging
 import random
+import time
 import requests
 
 import config
@@ -31,10 +33,12 @@ def init():
 
 def send_message(text, reply_to_message_id=None):
     """Send message to Telegram channel via HTTP API.
-    Returns message_id (int) on success, None on failure/disabled."""
+    Returns message_id (int) on success, None on failure/disabled.
+    V2: Random 0.5-1.5s delay before send (humanization)."""
     if not config.TELEGRAM_ENABLED:
         logger.info(f"[TELEGRAM DISABLED] Would send:\n{text}")
         return None
+    time.sleep(random.uniform(0.5, 1.5))
     url = f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": config.TELEGRAM_CHANNEL_ID,
@@ -71,6 +75,13 @@ def format_currency(value):
 def _link_button():
     """Return the affiliate link formatted for messages."""
     return f"<a href='{config.AFFILIATE_LINK}'>🎰 APOSTE AGORA!</a>"
+
+
+# Emoji arrays for humanization (pick randomly)
+WIN_EMOJIS = ["💸", "💰", "🤑", "🏆", "✨"]
+ALERT_EMOJIS = ["⚠️", "🔔", "📣"]
+ANALYSIS_EMOJIS = ["🔍", "📈", "📡", "🧠"]
+WIN_PHRASES = ["Lucro garantido!", "Na conta!", "Mais uma verde!"]
 
 
 # ============================================================
@@ -133,8 +144,9 @@ Retornamos quando o mercado estabilizar. ⏳"""
 # TEMPLATE 2: Pattern Monitoring (Optional)
 # ============================================================
 def send_pattern_monitoring(count, remaining):
-    """Send pattern monitoring message (3+ rounds of sequence detected)."""
-    text = f"""🔍 Analisando padrões...
+    """Send pattern monitoring message (3+ rounds of sequence detected). Random Analysis emoji."""
+    emoji = random.choice(ANALYSIS_EMOJIS)
+    text = f"""{emoji} Analisando padrões...
 
 Últimas {count} rodadas abaixo de 2x
 Aguardando confirmação ({remaining} restantes)
@@ -167,12 +179,12 @@ def send_signal(last_round, target):
 # TEMPLATE 4: Win Result
 # ============================================================
 def send_win_result(result, target, today_wins, today_losses, reply_to_message_id=None):
-    """Send win result message (gale_depth = 0) - V2 style. Optional reply threading."""
-    win_emojis = ["💸", "💰", "🤑", "🏆", "✨"]
-    random_emoji = random.choice(win_emojis)
-    text = f"""✅ GREEEEEN! {random_emoji}
+    """Send win result message (gale_depth = 0) - V2 style. Rotates emoji + phrase."""
+    emoji = random.choice(WIN_EMOJIS)
+    phrase = random.choice(WIN_PHRASES)
+    text = f"""✅ GREEEEEN! {emoji}
 
-Lucro garantido!
+{phrase}
 
 {_link_button()}"""
     send_message(text, reply_to_message_id=reply_to_message_id)
@@ -182,9 +194,9 @@ Lucro garantido!
 # TEMPLATE 5: Gale 1 Trigger
 # ============================================================
 def send_gale1_trigger(result, target, reply_to_message_id=None):
-    """Send gale 1 warning message (V2 style). Optional reply threading."""
-    gale_count = 1
-    text = f"""⚠️ GALE {gale_count} ⚠️
+    """Send gale 1 warning message (V2 style). Random Alert emoji."""
+    emoji = random.choice(ALERT_EMOJIS)
+    text = f"""{emoji} GALE 1 {emoji}
 
 Dobre a aposta! Entrada de recuperação.
 
@@ -196,9 +208,9 @@ Dobre a aposta! Entrada de recuperação.
 # TEMPLATE 6: Gale 2 Trigger
 # ============================================================
 def send_gale2_trigger(result, target, reply_to_message_id=None):
-    """Send gale 2 warning message (V2 style). Optional reply threading."""
-    gale_count = 2
-    text = f"""⚠️ GALE {gale_count} ⚠️
+    """Send gale 2 warning message (V2 style). Random Alert emoji."""
+    emoji = random.choice(ALERT_EMOJIS)
+    text = f"""{emoji} GALE 2 {emoji}
 
 Dobre a aposta! Entrada de recuperação.
 
