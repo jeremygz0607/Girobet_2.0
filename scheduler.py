@@ -153,13 +153,13 @@ def _get_signals_for_date(date_str):
 
 
 def _build_result_emojis(signals):
-    """Build emoji string from list of signals: ✅ for won, ❌ for lost."""
+    """Build emoji string from list of signals: ✅ for won, 🛑 for lost."""
     emojis = []
     for sig in signals:
         if sig.get("status") == "won":
             emojis.append("✅")
         elif sig.get("status") == "lost":
-            emojis.append("❌")
+            emojis.append("🛑")
     return "".join(emojis)
 
 
