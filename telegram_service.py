@@ -115,7 +115,7 @@ KEEP_ALIVE_VARIANTS = [
     # Variant A
     "📊 Mercado instável no momento...\nAnalisando padrões para entrada segura. Fique atento! 👀",
     # Variant B
-    "🌐 Modo de proteção ativo.\nAguardando estabilização do mercado para próxima entrada segura. 🛡️",
+    "🌐 Modo de proteção ativo.\nAguardando estabilidade do mercado para entrada segura. 🛡️",
     # Variant C
     "🔍 Algoritmo em execução...\nMonitorando os próximos rounds. Sinal em breve! 📡",
 ]
