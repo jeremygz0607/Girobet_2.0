@@ -4,6 +4,7 @@ All messages in Portuguese (Brazil) with emojis for engagement.
 Uses Telegram Bot HTTP API directly (no python-telegram-bot dependency).
 """
 import logging
+import random
 import requests
 
 import config
@@ -119,17 +120,12 @@ def send_signal(last_round, target):
 # TEMPLATE 4: Win Result
 # ============================================================
 def send_win_result(result, target, today_wins, today_losses):
-    """Send win result message (gale_depth = 0)."""
-    profit_example = format_currency((target - 1) * 5)
-    text = f"""✅ GANHAMOS! - {result}x
+    """Send win result message (gale_depth = 0) - V2 style."""
+    win_emojis = ["💸", "💰", "🤑", "🏆", "✨"]
+    random_emoji = random.choice(win_emojis)
+    text = f"""✅ GREEEEEN! {random_emoji}
 
-Meta era {target}x - BATEU ✅
-
-Quem apostou R$5 lucrou R${profit_example}
-
-Hoje: {today_wins} ✅ | {today_losses} 🛑
-
-Próximo sinal em breve 👀
+Lucro garantido!
 
 {_link_button()}"""
     send_message(text)
