@@ -824,6 +824,20 @@ def on_new_round(round_data):
     if in_cooldown() or is_session_closed():
         return
     consecutive = _consecutive_under_threshold(recent)
+    # Current round multiplier (for cancel logic after pre-signal)
+    current_mult = round_data.get("multiplier")
+    try:
+        current_mult_val = float(current_mult)
+    except (TypeError, ValueError):
+        current_mult_val = 0.0
+
+    # If we already sent Template 2 and the next round breaks the pattern (> THRESHOLD),
+    # post "Sinal cancelado" and reset the pre-signal flag.
+    if _pre_signal_sent_for_run() and current_mult_val > config.THRESHOLD and consecutive < config.SEQUENCE_LENGTH:
+        telegram_service.send_signal_cancelled()
+        _set_pre_signal_sent(False)
+        return
+
     # Trigger fires (3 consecutive < THRESHOLD): send Template 3 immediately
     if check_trigger(recent):
         _set_pre_signal_sent(False)

@@ -204,18 +204,28 @@ Retornamos quando o mercado estabilizar. ⏳"""
 
 
 # ============================================================
-# TEMPLATE 2: Pattern Monitoring (Optional)
+# TEMPLATE 2: Pre-Signal + (legacy) Pattern Monitoring
 # ============================================================
 def send_pre_signal_analyzing():
-    """Send Pre-Signal (Template 2): Analisando... — same as pattern identified. Used before delay then Template 3."""
+    """Send Pre-Signal (Template 2): 'Analisando...' before a possible signal."""
     text = """⚠️ Analisando... ⚠️
 
 Padrão identificado. Aguarde o sinal."""
     send_message(text)
 
 
+def send_signal_cancelled():
+    """Send Signal Cancelled template when post-pre-signal round breaks the pattern (> 2.0x)."""
+    text = """🚫 Sinal cancelado.
+
+Condições de entrada mudaram. Algoritmo protegendo sua banca. 🛡️
+
+Aguardando próxima oportunidade..."""
+    send_message(text)
+
+
 def send_pattern_monitoring(count, remaining):
-    """Send pattern monitoring message (3+ rounds of sequence detected). Random Analysis emoji."""
+    """(Optional / legacy) Pattern monitoring message. Currently not used for V2 flow."""
     emoji = random.choice(ANALYSIS_EMOJIS)
     text = f"""⚠️ Analisando... ⚠️
 
