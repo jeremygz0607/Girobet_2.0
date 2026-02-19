@@ -218,7 +218,8 @@ def send_signal_cancelled():
     """Send Signal Cancelled template when post-pre-signal round breaks the pattern (> 2.0x)."""
     text = """🚫 Sinal cancelado.
 
-Condições de entrada mudaram. Algoritmo protegendo sua banca. 🛡️
+Condições de entrada mudaram. 
+Algoritmo protegendo sua banca. 🛡️
 
 Aguardando próxima oportunidade..."""
     send_message(text)
