@@ -298,20 +298,31 @@ Dobre a aposta! Entrada de recuperação.
 
 
 # ============================================================
-# TEMPLATE 7: Gale Recovery
+# TEMPLATE 7: Gale Recovery (same style as Win: Standard / Big)
 # ============================================================
 def send_gale_recovery(gale_depth, result, target, today_wins, today_losses, reply_to_message_id=None):
-    """Send gale recovery message (gale 1 or 2 hit target). Optional reply threading."""
-    text = f"""✅ RECUPERAMOS NO GALE {gale_depth}! - {result}x
+    """Send gale recovery (gale 1 or 2 hit target). Big if result >= 3*target, else Standard. Same style as win."""
+    try:
+        result_val = float(result)
+        target_val = float(target)
+        is_big_win = result_val >= 3 * target_val
+    except (TypeError, ValueError):
+        is_big_win = False
+    if is_big_win:
+        emoji = random.choice(WIN_EMOJIS)
+        text = f"""✅ 🔥 GREEEEEN GIGANTE! 🔥 ✅
 
-Meta era {target}x - BATEU ✅
+Lucro MASSIVO garantido! {emoji}
 
-É pra isso que o sistema GALE existe! 
-Quem confiou e dobrou tá lucrando agora 🤑
+Recuperamos no GALE {gale_depth}! Quem seguiu, lucrou! 💎
 
-Hoje: {today_wins} ✅ | {today_losses} 🛑
+{_link_button()}"""
+    else:
+        emoji = random.choice(WIN_EMOJIS)
+        phrase = random.choice(WIN_PHRASES)
+        text = f"""✅ GREEEEEN! {emoji}
 
-Próximo sinal em breve 👀
+Recuperamos no GALE {gale_depth}! {phrase}
 
 {_link_button()}"""
     send_message(text, reply_to_message_id=reply_to_message_id)
