@@ -258,6 +258,39 @@ def check_volatility_cooldown_midpoint():
         logger.info("Volatility cooldown midpoint keep-alive sent")
 
 
+def _consecutive_under_threshold(recent_rounds):
+    """Count consecutive rounds from newest that are all < THRESHOLD. Returns 0, 1, 2, 3, ..."""
+    if not recent_rounds:
+        return 0
+    count = 0
+    for r in recent_rounds:
+        if r.get("multiplier", 999) < config.THRESHOLD:
+            count += 1
+        else:
+            break
+    return count
+
+
+def _pre_signal_sent_for_run():
+    """True if we already sent Template 2 for this run (so we don't send again until trigger or reset)."""
+    state = _get_engine_state()
+    return state.get("pre_signal_sent", False) is True
+
+
+def _set_pre_signal_sent(value):
+    """Set/clear pre_signal_sent flag in engine state."""
+    if _engine_state_coll is None:
+        return
+    try:
+        _engine_state_coll.update_one(
+            {"_id": "state"},
+            {"$set": {"pre_signal_sent": value}},
+            upsert=True,
+        )
+    except Exception as e:
+        logger.debug(f"_set_pre_signal_sent error: {e}")
+
+
 def _is_in_interrupted_cooldown():
     """True if in V2 interrupted cooldown (2 min after Signal Interrupted). Stub returns False if not implemented."""
     state = _get_engine_state()
@@ -396,11 +429,7 @@ def create_signal(trigger_round_id, target):
     if _signals_coll is None:
         return None
     _ensure_daily_stats()
-    # Template 2: Pattern monitoring sent just before Template 3 (signal)
-    pattern_data = get_pattern_monitoring_data()
-    if pattern_data:
-        count, remaining = pattern_data
-        telegram_service.send_pattern_monitoring(count, remaining)
+    # Template 2 (Pre-Signal) was already sent earlier; here we send only Template 3 (on time with this round)
     now = datetime.now(timezone.utc)
     today = _today_str()
     sig_id = _next_signal_id()
@@ -790,7 +819,20 @@ def on_new_round(round_data):
     if _check_volatility_trigger(recent) and not is_in_volatility_cooldown():
         _enter_volatility_cooldown()
         return
+    if is_in_volatility_cooldown():
+        return
+    if in_cooldown() or is_session_closed():
+        return
+    consecutive = _consecutive_under_threshold(recent)
+    # Trigger fires (3 consecutive < THRESHOLD): send Template 3 immediately
     if check_trigger(recent):
-        # Trigger round: the newest round in the sequence (first of last 6)
+        _set_pre_signal_sent(False)
         trigger_round_id = recent[0]["_id"] if recent else round_data.get("_id")
         create_signal(trigger_round_id, config.TARGET_CASHOUT)
+        return
+    # One round before trigger (2 consecutive): send Template 2 once
+    if consecutive == 2 and not _pre_signal_sent_for_run():
+        telegram_service.send_pre_signal_analyzing()
+        _set_pre_signal_sent(True)
+    if consecutive < 2:
+        _set_pre_signal_sent(False)

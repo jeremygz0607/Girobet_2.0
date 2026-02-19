@@ -206,6 +206,14 @@ Retornamos quando o mercado estabilizar. ⏳"""
 # ============================================================
 # TEMPLATE 2: Pattern Monitoring (Optional)
 # ============================================================
+def send_pre_signal_analyzing():
+    """Send Pre-Signal (Template 2): Analisando... — same as pattern identified. Used before delay then Template 3."""
+    text = """⚠️ Analisando... ⚠️
+
+Padrão identificado. Aguarde o sinal."""
+    send_message(text)
+
+
 def send_pattern_monitoring(count, remaining):
     """Send pattern monitoring message (3+ rounds of sequence detected). Random Analysis emoji."""
     emoji = random.choice(ANALYSIS_EMOJIS)
