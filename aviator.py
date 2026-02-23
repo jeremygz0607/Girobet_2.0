@@ -89,7 +89,7 @@ def run_payout_script():
                     
                     try:
                         dropdown_toggle = WebDriverWait(driver, 10).until(
-                            EC.element_to_be_clickable((By.CSS_SELECTOR, ".button-block .dropdown-toggle button"))
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, ".button-block .dropdown-toggle"))
                         )
                         dropdown_toggle.click()
                         time.sleep(0.5)
