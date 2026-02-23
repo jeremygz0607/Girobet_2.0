@@ -85,16 +85,16 @@ def run_payout_script():
                             (By.CSS_SELECTOR, "iframe[title='Game Window']")
                         )
                     )
-                    driver.switch_to.frame(iframe)
+                    # driver.switch_to.frame(iframe)
                     
-                    try:
-                        dropdown_toggle = WebDriverWait(driver, 10).until(
-                            EC.element_to_be_clickable((By.CSS_SELECTOR, ".button-block .dropdown-toggle"))
-                        )
-                        dropdown_toggle.click()
-                        time.sleep(0.5)
-                    except Exception:
-                        logger.debug("Dropdown toggle not found or already open")
+                    # try:
+                    #     dropdown_toggle = WebDriverWait(driver, 10).until(
+                    #         EC.element_to_be_clickable((By.CSS_SELECTOR, ".button-block .dropdown-toggle"))
+                    #     )
+                    #     dropdown_toggle.click()
+                    #     time.sleep(0.5)
+                    # except Exception:
+                    #     logger.debug("Dropdown toggle not found or already open")
                         
                     if not iframe_logged:
                         logger.info("Switched to game iframe")
