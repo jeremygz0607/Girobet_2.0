@@ -31,7 +31,7 @@ def login(driver):
     try:
         logger.info(f"Navigating to {config.LOGIN_URL}")
         driver.get(config.LOGIN_URL)
-        time.sleep(5)
+        time.sleep(2)
         username_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='email']"))
         )
