@@ -32,8 +32,12 @@ def login(driver):
         logger.info(f"Navigating to {config.LOGIN_URL}")
         driver.get(config.LOGIN_URL)
         time.sleep(1)
-        username_input = driver.find_element(By.CSS_SELECTOR, "input[id='MULTICHANNEL']")
-        password_input = driver.find_element(By.CSS_SELECTOR, "input[id='PASSWORD']")
+        username_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='email']"))
+        )
+        password_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='password']"))
+        )
         input_text(username_input, config.AVIATOR_USERNAME)
         input_text(password_input, config.AVIATOR_PASSWORD)
         driver.find_element(By.CSS_SELECTOR, "button[id='signIn']").click()
